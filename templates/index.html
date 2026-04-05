@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Road Accident Analysis System | Admin Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --p: #2563eb; --s: #10b981; --e: #ef4444; --bg: #f8fafc; --side: #0f172a; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar Navigation */
+        .sidebar { width: 280px; background: var(--side); color: white; display: flex; flex-direction: column; padding: 30px; }
+        .logo { font-size: 24px; font-weight: 800; margin-bottom: 50px; display: flex; align-items: center; gap: 10px; }
+        .nav-item { padding: 15px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: 0.3s; display: flex; justify-content: space-between; align-items: center; border: 1px solid transparent; }
+        .nav-item:hover { background: rgba(255,255,255,0.05); }
+        .nav-item.active { background: var(--p); box-shadow: 0 4px 15px rgba(37,99,235,0.3); }
+        .nav-item.done { border-color: var(--s); color: var(--s); }
+        .step-num { font-size: 10px; background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 5px; }
+
+        /* Main Content */
+        .main { flex: 1; padding: 40px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .toggle-box { background: #e2e8f0; padding: 5px; border-radius: 12px; display: flex; }
+        .toggle-btn { padding: 10px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; background: transparent; }
+        .toggle-btn.active { background: white; color: var(--p); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+
+        .card { background: white; padding: 40px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); display: none; }
+        .card.active { display: block; animation: slideUp 0.4s ease; }
+        @keyframes slideUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        label { display: block; font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px; }
+        input, select, textarea { width: 100%; padding: 14px; border: 2px solid #f1f5f9; border-radius: 12px; background: #f8fafc; font-family: inherit; box-sizing: border-box; }
+        input:focus { border-color: var(--p); outline: none; background: white; }
+
+        /* Bulk Table */
+        .table-box { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { text-align: left; padding: 15px; color: #64748b; border-bottom: 2px solid #f1f5f9; }
+        td { padding: 10px; border-bottom: 1px solid #f1f5f9; }
+
+        .actions { margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .btn-main { background: var(--s); color: white; padding: 18px 60px; border-radius: 15px; border: none; font-weight: 800; font-size: 18px; cursor: pointer; transition: 0.3s; }
+        .btn-main:disabled { background: #cbd5e1; cursor: not-allowed; }
+        .btn-row { background: var(--side); color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 700; }
+        .btn-del { background: var(--e); color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 700; }
+        .btn-next { background: var(--p); color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: 700; margin-top: 20px; float: right; transition: 0.2s;}
+        .btn-next:hover { opacity: 0.9; transform: translateX(5px); }
+        
+        .flash { position: fixed; top: 20px; right: 20px; padding: 20px; border-radius: 12px; color: white; font-weight: 700; z-index: 100; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .success { background: var(--s); } .danger { background: var(--e); } .warning { background: #f59e0b; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo">🚨Road Accident Analysis System </div>
+        <div class="nav-item active" id="n-driver" onclick="showSec('driver')"><span>Driver</span> <span class="step-num">1</span></div>
+        <div class="nav-item" id="n-vehicle" onclick="showSec('vehicle')"><span>Vehicle</span> <span class="step-num">2</span></div>
+        <div class="nav-item" id="n-loc" onclick="showSec('loc')"><span>Location</span> <span class="step-num">3</span></div>
+        <div class="nav-item" id="n-weather" onclick="showSec('weather')"><span>Weather</span> <span class="step-num">4</span></div>
+        <div class="nav-item" id="n-hosp" onclick="showSec('hosp')"><span>Hospital</span> <span class="step-num">5</span></div>
+        <div class="nav-item" id="n-acc" onclick="showSec('acc')"><span>Accident</span> <span class="step-num">6</span></div>
+        <div class="nav-item" id="n-rep" onclick="showSec('rep')"><span>Officer Report</span> <span class="step-num">7</span></div>
+        
+        <div style="margin-top: auto; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 15px; font-size: 12px; line-height: 1.6;">
+            <strong>System Status:</strong> Admin Mode Active<br>
+            <strong>Operator:</strong> <span style="color: var(--s);">{{ session['username'] }}</span><br>
+            <a href="/logout" style="display: block; text-align: center; margin-top: 15px; padding: 10px; background: rgba(239, 68, 68, 0.2); color: #fca5a5; border-radius: 8px; text-decoration: none; font-weight: 700; transition: 0.3s;">🚪 Secure Logout</a>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <h2>Data Acquisition Hub</h2>
+            <div class="toggle-box">
+                <button id="sBtn" class="toggle-btn active" onclick="setMode('single')">Single</button>
+                <button id="bBtn" class="toggle-btn" onclick="setMode('bulk')">Spreadsheet</button>
+            </div>
+            <a href="/dashboard" style="text-decoration:none; font-weight:700; color:var(--p)">📊 Open Analytics</a>
+        </div>
+
+        {% with m = get_flashed_messages(with_categories=true) %}
+            {% if m %}{% for c, msg in m %}<div class="flash {{c}}">{{msg}}</div>{% endfor %}{% endif %}
+        {% endwith %}
+
+        <form id="masterForm" action="/submit_data" method="POST" oninput="validate()">
+            <div id="sw">
+                <div id="s-driver" class="card active"><div class="grid">
+                    <div><label>Driver Full Name</label><input type="text" name="driver_name[]" required></div>
+                    <div><label>License Reference</label><input type="text" name="license_number[]" required></div>
+                    <div><label>Contact Phone</label><input type="text" name="phone[]" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')" required></div>
+                    <div><label>Resident Address</label><input type="text" name="address[]" required></div>
+                </div><button type="button" class="btn-next" onclick="showSec('vehicle')">Next Step ➔</button></div>
+                
+                <div id="s-vehicle" class="card"><div class="grid">
+                    <div><label>Classification</label><select name="vehicle_type[]" required><option value="">Select Type...</option><option>Bike</option><option>Car</option><option>SUV</option><option>Bus</option><option>Truck</option></select></div>
+                    <div><label>Registration Plate</label><input type="text" name="vehicle_number[]" required></div>
+                    <div style="grid-column: span 2;"><label>Make & Model</label><input type="text" name="model[]" required></div>
+                </div><button type="button" class="btn-next" onclick="showSec('loc')">Next Step ➔</button></div>
+                
+                <div id="s-loc" class="card"><div class="grid">
+                    <div><label>State</label><input type="text" name="state[]" required></div>
+                    <div><label>City</label><input type="text" name="city[]" required></div>
+                    <div style="grid-column: span 2;"><label>Area / Landmark</label><input type="text" name="area[]" required></div>
+                    <div><label>Latitude Coordinates</label><input type="number" step="any" name="latitude[]" required></div>
+                    <div><label>Longitude Coordinates</label><input type="number" step="any" name="longitude[]" required></div>
+                </div><button type="button" class="btn-next" onclick="showSec('weather')">Next Step ➔</button></div>
+                
+                <div id="s-weather" class="card"><div class="grid">
+                    <div><label>Atmospheric Condition</label><select name="weather_condition[]" required><option value="">Select...</option><option>Clear</option><option>Rainy</option><option>Foggy</option><option>Overcast</option></select></div>
+                    <div><label>Temp (°C)</label><input type="number" name="temperature[]" required></div>
+                    <div><label>Humidity (%)</label><input type="number" name="humidity[]" required></div>
+                </div><button type="button" class="btn-next" onclick="showSec('hosp')">Next Step ➔</button></div>
+                
+                <div id="s-hosp" class="card"><div class="grid">
+                    <div><label>Assigned Hospital</label><input type="text" name="hospital_name[]" required></div>
+                    <div><label>Hospital City</label><input type="text" name="hospital_city[]" required></div>
+                    <div style="grid-column: span 2;"><label>Emergency Room Address</label><input type="text" name="hospital_address[]" required></div>
+                </div><button type="button" class="btn-next" onclick="showSec('acc')">Next Step ➔</button></div>
+                
+                <div id="s-acc" class="card"><div class="grid">
+                    <div><label>Incident Date</label><input type="date" name="accident_date[]" required></div>
+                    <div><label>Incident Time</label><input type="time" name="accident_time[]" required></div>
+                    <div><label>Total Casualties</label><input type="number" name="casualties[]" required></div>
+                    <div><label>Case Status</label><select name="accident_status[]" required><option>Active</option><option>Under Investigation</option><option>Closed</option></select></div>
+                </div><button type="button" class="btn-next" onclick="showSec('rep')">Next Step ➔</button></div>
+                
+                <div id="s-rep" class="card"><div class="grid">
+                    <div><label>On-Site Officer</label><input type="text" name="officer_name[]" required></div>
+                    <div><label>Submission Date</label><input type="date" name="report_date[]" required></div>
+                    <div style="grid-column: span 2;"><label>Detailed Observation</label><textarea name="report_details[]" required></textarea></div>
+                </div></div>
+            </div>
+
+            <div id="bw" style="display:none;">
+                <div id="b-driver" class="card active"><div class="table-box"><table id="t-driver"><thead><tr><th>Name</th><th>License</th><th>Phone</th><th>Addr</th></tr></thead><tbody></tbody></table></div></div>
+                <div id="b-vehicle" class="card"><div class="table-box"><table id="t-vehicle"><thead><tr><th>Type</th><th>Plate</th><th>Model</th></tr></thead><tbody></tbody></table></div></div>
+                <div id="b-loc" class="card"><div class="table-box"><table id="t-loc"><thead><tr><th>State</th><th>City</th><th>Area</th><th>Lat</th><th>Lon</th></tr></thead><tbody></tbody></table></div></div>
+                <div id="b-weather" class="card"><div class="table-box"><table id="t-weather"><thead><tr><th>Cond</th><th>Temp</th><th>Humid</th></tr></thead><tbody></tbody></table></div></div>
+                <div id="b-hosp" class="card"><div class="table-box"><table id="t-hosp"><thead><tr><th>Hospital Name</th><th>City</th><th>Address</th></tr></thead><tbody></tbody></table></div></div>
+                <div id="b-acc" class="card"><div class="table-box"><table id="t-acc"><thead><tr><th>Date</th><th>Time</th><th>Cas</th><th>Stat</th></tr></thead><tbody></tbody></table></div></div>
+                <div id="b-rep" class="card"><div class="table-box"><table id="t-rep"><thead><tr><th>Officer</th><th>Date</th><th>Details</th></tr></thead><tbody></tbody></table></div></div>
+            </div>
+
+            <div class="actions">
+                <div id="bulkControls" style="display:none; gap:10px;">
+                    <button type="button" class="btn-row" onclick="addRow()">➕ Add Record</button>
+                    <button type="button" class="btn-del" onclick="delRow()">🗑️ Remove Last</button>
+                </div>
+                <p id="statLabel">Verification: 0 / 7 Stages Secure</p>
+                <button type="submit" id="commitBtn" class="btn-main" disabled>💾 Securely Commit Data</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let mode = 'single', rows = 0;
+        const steps = ['driver','vehicle','loc','weather','hosp','acc','rep'];
+
+        function setMode(m) {
+            mode = m;
+            document.getElementById('sBtn').classList.toggle('active', m==='single');
+            document.getElementById('bBtn').classList.toggle('active', m==='bulk');
+            document.getElementById('sw').style.display = (m==='single'?'block':'none');
+            document.getElementById('bw').style.display = (m==='bulk'?'block':'none');
+            document.getElementById('bulkControls').style.display = (m==='bulk'?'flex':'none');
+            document.querySelectorAll('#sw input, #sw select, #sw textarea').forEach(i => i.disabled = (m==='bulk'));
+            document.querySelectorAll('#bw input, #bw select, #bw textarea').forEach(i => i.disabled = (m==='single'));
+            showSec('driver'); validate();
+        }
+
+        function showSec(id) {
+            document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            const pre = (mode==='single'?'s-':'b-');
+            document.getElementById(pre+id).classList.add('active');
+            document.getElementById('n-'+id).classList.add('active');
+        }
+
+        function addRow() {
+            const row = (id, html) => { document.querySelector(`#${id} tbody`).insertRow().innerHTML = html; };
+            row('t-driver', `<td><input name="driver_name[]" required></td><td><input name="license_number[]" required></td><td><input name="phone[]" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')" required></td><td><input name="address[]" required></td>`);
+            row('t-vehicle', `<td><select name="vehicle_type[]" required><option value="Bike">Bike</option><option value="Car">Car</option><option value="SUV">SUV</option></select></td><td><input name="vehicle_number[]" required></td><td><input name="model[]" required></td>`);
+            row('t-loc', `<td><input name="state[]" required></td><td><input name="city[]" required></td><td><input name="area[]" required></td><td><input type="number" step="any" name="latitude[]" required></td><td><input type="number" step="any" name="longitude[]" required></td>`);
+            row('t-weather', `<td><select name="weather_condition[]" required><option>Clear</option><option>Rainy</option><option>Foggy</option><option>Overcast</option></select></td><td><input type="number" name="temperature[]" required></td><td><input type="number" name="humidity[]" required></td>`);
+            row('t-hosp', `<td><input name="hospital_name[]" required></td><td><input name="hospital_city[]" required></td><td><input name="hospital_address[]" required></td>`);
+            row('t-acc', `<td><input type="date" name="accident_date[]" required></td><td><input type="time" name="accident_time[]" required></td><td><input type="number" name="casualties[]" required></td><td><select name="accident_status[]"><option>Active</option><option>Under Investigation</option><option>Closed</option></select></td>`);
+            row('t-rep', `<td><input name="officer_name[]" required></td><td><input type="date" name="report_date[]" required></td><td><textarea name="report_details[]" required></textarea></td>`);
+            rows++; validate();
+        }
+
+        function delRow() {
+            if(rows <= 1) return;
+            steps.forEach(s => { const b = document.querySelector(`#t-${s} tbody`); b.deleteRow(b.rows.length-1); });
+            rows--; validate();
+        }
+
+        function validate() {
+            let okCount = 0; const pre = (mode==='single'?'s-':'b-');
+            steps.forEach(s => {
+                const fields = document.querySelectorAll(`#${pre}${s} [required]`);
+                const valid = Array.from(fields).every(f => f.value.trim() !== "" && f.checkValidity());
+                const nav = document.getElementById('n-'+s);
+                if(valid) { nav.classList.add('done'); okCount++; } else { nav.classList.remove('done'); }
+            });
+            document.getElementById('statLabel').innerText = `Verification: ${okCount} / 7 Stages Secure`;
+            document.getElementById('commitBtn').disabled = (okCount < 7);
+        }
+
+        addRow(); setMode('single');
+    </script>
+</body>
+</html>

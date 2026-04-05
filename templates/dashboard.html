@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Road Accident Analysis System - Interactive BI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* 🌌 Deep Space Dark Theme with Vibrant Accents */
+        :root { 
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+            --glass-bg: rgba(30, 41, 59, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6; 
+            --accent: #22d3ee; /* Glowing Cyan */
+        }
+        
+        body { font-family: 'Inter', sans-serif; background: var(--bg-gradient); color: var(--text-main); padding: 20px; margin: 0; min-height: 100vh; }
+        
+        /* 💎 Glassmorphism Base Class */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; max-width: 1400px; margin: 0 auto 20px; padding: 20px 30px; border-radius: 16px; }
+        .header h1 { margin: 0; font-size: 26px; font-weight: 800; background: -webkit-linear-gradient(45deg, #22d3ee, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .btn-home { background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: 600; transition: all 0.3s ease; }
+        .btn-home:hover { background: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
+        
+        .filter-panel { max-width: 1400px; margin: 0 auto 30px; padding: 25px; border-radius: 16px; display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; }
+        .filter-group { flex: 1; min-width: 200px; }
+        .filter-group label { display: block; font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
+        .filter-group select { width: 100%; padding: 12px; border: 1px solid var(--glass-border); border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; color: white; background: rgba(15, 23, 42, 0.8); outline: none; cursor: pointer; transition: all 0.3s ease; }
+        .filter-group select:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(34, 211, 238, 0.3); }
+        
+        .btn-reset { padding: 12px 25px; background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-reset:hover { background: #ef4444; color: white; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
+        
+        .kpi-banner { max-width: 1400px; margin: 0 auto 25px; display: flex; gap: 20px; }
+        .kpi-card { flex: 1; padding: 25px; border-radius: 16px; text-align: center; transition: transform 0.3s ease; border-top: 2px solid var(--primary); }
+        .kpi-card:hover { transform: translateY(-5px); }
+        .kpi-card:nth-child(2) { border-top: 2px solid #ef4444; }
+        .kpi-card h2 { margin: 0; font-size: 46px; font-weight: 800; color: white; }
+        .kpi-card p { margin: 5px 0 0 0; font-size: 14px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; }
+        
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 25px; max-width: 1400px; margin: 0 auto; }
+        .chart-card { padding: 25px; border-radius: 16px; display: flex; flex-direction: column; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .chart-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
+        .chart-card h3 { margin-top: 0; color: white; font-size: 18px; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .chart-container { position: relative; height: 320px; width: 100%; flex-grow: 1; }
+        
+        .chart-desc { margin-top: 20px; padding: 15px; background: rgba(0, 0, 0, 0.2); border-radius: 8px; font-size: 13px; color: var(--text-muted); border-left: 4px solid var(--accent); line-height: 1.6; }
+        .chart-desc b { color: var(--text-main); }
+        .chart-desc .highlight { color: var(--accent); font-weight: 700; }
+        
+        .no-data-msg { text-align: center; padding: 50px; background: rgba(239, 68, 68, 0.1); border-radius: 16px; border: 1px solid #ef4444; color: #fca5a5; font-weight: bold; font-size: 18px; display: none; }
+        
+        /* Force Chart.js text to be light */
+        canvas { filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); }
+        
+        /* Flash messages on Dashboard */
+        .flash-box { max-width: 1400px; margin: 0 auto 20px; }
+        .flash { padding: 15px 20px; border-radius: 12px; color: white; font-weight: 700; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .danger { background: #ef4444; }
+    </style>
+</head>
+<body>
+
+    <div class="header glass-card">
+        <h1>📊 SafetyDrive Interactive BI Dashboard</h1>
+        
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <span style="font-weight: 600; color: var(--text-muted); font-size: 14px;">Logged in as: <b style="color: var(--accent); text-transform: uppercase;">{{ session['username'] }}</b></span>
+            
+            {% if session.get('role') == 'admin' %}
+                <a href="/" class="btn-home">⬅ Back to Data Entry</a>
+            {% endif %}
+            
+            <a href="/logout" class="btn-home" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4); color: #fca5a5;">🚪 Logout</a>
+        </div>
+    </div>
+
+    <div class="flash-box">
+        {% with m = get_flashed_messages(with_categories=true) %}
+            {% if m %}{% for c, msg in m %}<div class="flash {{c}}">{{msg}}</div>{% endfor %}{% endif %}
+        {% endwith %}
+    </div>
+
+    <div id="noDataAlert" class="no-data-msg glass-card">
+        ⚠️ Warning: The Data Warehouse is currently empty! Please wait for an Admin to enter cases to see analytics.
+    </div>
+
+    <div id="dashboardContent">
+        <div class="filter-panel glass-card">
+            <div class="filter-group"><label>📍 Filter by State</label><select id="filterState" onchange="applyFilters()"><option value="ALL">All States</option></select></div>
+            <div class="filter-group"><label>🌦️ Filter by Weather</label><select id="filterWeather" onchange="applyFilters()"><option value="ALL">All Weather Conditions</option></select></div>
+            <div class="filter-group"><label>🚗 Filter by Vehicle</label><select id="filterVehicle" onchange="applyFilters()"><option value="ALL">All Vehicle Types</option></select></div>
+            <div class="filter-group"><label>📅 Filter by Year</label><select id="filterYear" onchange="applyFilters()"><option value="ALL">All Years</option></select></div>
+            <button class="btn-reset" onclick="resetFilters()">Reset All Filters</button>
+        </div>
+
+        <div class="kpi-banner">
+            <div class="kpi-card glass-card"><h2 id="kpiTotalAccidents">0</h2><p>Total Accidents</p></div>
+            <div class="kpi-card glass-card"><h2 id="kpiTotalCasualties">0</h2><p>Total Casualties</p></div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="chart-card glass-card" style="grid-column: span 2;">
+                <h3>📈 Monthly Accident Trend</h3>
+                <div class="chart-container"><canvas id="trendChart"></canvas></div>
+                <div class="chart-desc" id="descTrend">Loading...</div>
+            </div>
+            <div class="chart-card glass-card">
+                <h3>🗺️ Casualties by Region (State)</h3>
+                <div class="chart-container"><canvas id="stateChart"></canvas></div>
+                <div class="chart-desc" id="descState">Loading...</div>
+            </div>
+            <div class="chart-card glass-card">
+                <h3>🌦️ Accident Distribution by Weather</h3>
+                <div class="chart-container" style="display:flex; justify-content:center;"><canvas id="weatherChart"></canvas></div>
+                <div class="chart-desc" id="descWeather">Loading...</div>
+            </div>
+            <div class="chart-card glass-card" style="grid-column: span 2;">
+                <h3>🚗 Vehicle Type Involvement</h3>
+                <div class="chart-container"><canvas id="vehicleChart"></canvas></div>
+                <div class="chart-desc" id="descVehicle">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set Global Chart Settings for Dark Theme
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = "'Inter', sans-serif";
+
+        const rawData = {{ dataset | tojson }};
+        let charts = {};
+
+        if (!rawData || rawData.length === 0) {
+            document.getElementById('dashboardContent').style.display = 'none';
+            document.getElementById('noDataAlert').style.display = 'block';
+        } else {
+            initFilters(); 
+            applyFilters();
+        }
+
+        function initFilters() {
+            const getUnique = key => [...new Set(rawData.map(d => d[key]))].sort();
+            const populate = (id, arr) => {
+                const select = document.getElementById(id);
+                select.innerHTML = `<option value="ALL">All ${id.replace('filter', '')}s</option>`;
+                arr.forEach(val => select.add(new Option(val, val)));
+            };
+            populate('filterState', getUnique('state'));
+            populate('filterWeather', getUnique('weather_condition'));
+            populate('filterVehicle', getUnique('vehicle_type'));
+            populate('filterYear', getUnique('year'));
+        }
+
+        function applyFilters() {
+            if (rawData.length === 0) return;
+
+            const st = document.getElementById('filterState').value;
+            const we = document.getElementById('filterWeather').value;
+            const ve = document.getElementById('filterVehicle').value;
+            const yr = document.getElementById('filterYear').value;
+
+            const filteredData = rawData.filter(d => 
+                (st === 'ALL' || d.state === st) && (we === 'ALL' || d.weather_condition === we) &&
+                (ve === 'ALL' || d.vehicle_type === ve) && (yr === 'ALL' || d.year.toString() === yr)
+            );
+            
+            updateDashboards(filteredData);
+        }
+
+        function resetFilters() {
+            ['filterState', 'filterWeather', 'filterVehicle', 'filterYear'].forEach(id => document.getElementById(id).value = 'ALL');
+            applyFilters();
+        }
+
+        // Helper function to find the maximum key in an object
+        function getHighestKey(obj) {
+            return Object.keys(obj).reduce((a, b) => obj[a] > obj[b] ? a : b, "None");
+        }
+
+        function updateDashboards(data) {
+            document.getElementById('kpiTotalAccidents').innerText = data.length;
+            document.getElementById('kpiTotalCasualties').innerText = data.reduce((s, row) => s + parseInt(row.casualties||0), 0);
+
+            if (data.length === 0) {
+                ['descTrend', 'descState', 'descWeather', 'descVehicle'].forEach(id => {
+                    document.getElementById(id).innerHTML = "<b>Insight:</b> No data available for these exact filter settings.";
+                });
+                return;
+            }
+
+            const aggregate = (data, key, sumKey = null) => data.reduce((acc, row) => {
+                let val = key === 'month_year' ? `${row.year}-${row.month}` : row[key];
+                acc[val] = (acc[val] || 0) + (sumKey ? parseInt(row[sumKey]||0) : 1);
+                return acc;
+            }, {});
+
+            // Vibrant Neon Colors for the dark theme
+            const colorCyan = '#22d3ee';
+            const colorRed = '#fb7185';
+            const colorPurple = '#c084fc';
+            const colorPalette = ['#fbbf24', '#38bdf8', '#34d399', '#a78bfa', '#f472b6', '#e879f9'];
+
+            // 1. Trend Chart
+            const trendData = aggregate(data, 'month_year');
+            const sortedKeys = Object.keys(trendData).sort(); 
+            drawChart('trendChart', 'line', sortedKeys, sortedKeys.map(k => trendData[k]), 'Accidents', colorCyan);
+            const peakMonth = getHighestKey(trendData);
+            document.getElementById('descTrend').innerHTML = `<b>Dynamic Insight:</b> Based on current filters, the highest frequency of accidents occurred in <span class="highlight">${peakMonth}</span> with ${trendData[peakMonth]} recorded incidents.`;
+            
+            // 2. State Chart
+            const stateData = aggregate(data, 'state', 'casualties');
+            drawChart('stateChart', 'bar', Object.keys(stateData), Object.values(stateData), 'Casualties', colorRed);
+            const worstState = getHighestKey(stateData);
+            document.getElementById('descState').innerHTML = `<b>Dynamic Insight:</b> <span class="highlight">${worstState}</span> reports the highest number of casualties (${stateData[worstState]}) in this dataset view, indicating a need for targeted safety infrastructure.`;
+            
+            // 3. Weather Chart
+            const weatherData = aggregate(data, 'weather_condition');
+            drawChart('weatherChart', 'doughnut', Object.keys(weatherData), Object.values(weatherData), 'Incidents', colorPalette);
+            const worstWeather = getHighestKey(weatherData);
+            document.getElementById('descWeather').innerHTML = `<b>Dynamic Insight:</b> <span class="highlight">${worstWeather}</span> weather conditions are responsible for the majority of the incidents shown above.`;
+            
+            // 4. Vehicle Chart
+            const vehicleData = aggregate(data, 'vehicle_type');
+            drawChart('vehicleChart', 'bar', Object.keys(vehicleData), Object.values(vehicleData), 'Incidents', colorPurple);
+            const worstVehicle = getHighestKey(vehicleData);
+            document.getElementById('descVehicle').innerHTML = `<b>Dynamic Insight:</b> The <span class="highlight">${worstVehicle}</span> classification is the most frequently involved vehicle type among these filtered records.`;
+        }
+
+        // Highly Interactive Chart Configuration
+        function drawChart(id, type, labels, data, label, color) {
+            const ctx = document.getElementById(id).getContext('2d');
+            if (charts[id]) charts[id].destroy(); 
+            
+            let bgColors = type === 'line' ? color + '33' : (Array.isArray(color) ? color : color + 'CC');
+            
+            charts[id] = new Chart(ctx, {
+                type: type,
+                data: { 
+                    labels, 
+                    datasets: [{ 
+                        label, 
+                        data, 
+                        backgroundColor: bgColors, 
+                        borderColor: type === 'doughnut' ? '#1e293b' : color, 
+                        borderWidth: type === 'bar' ? 0 : 2,
+                        tension: 0.4, // Smooth curvy lines
+                        fill: type === 'line',
+                        borderRadius: type === 'bar' ? 6 : 0, // Rounded bars
+                        hoverOffset: type === 'doughnut' ? 10 : 0 // Doughnut segments pop out on hover
+                    }] 
+                },
+                options: { 
+                    maintainAspectRatio: false, 
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false }, // Better tooltips
+                    plugins: {
+                        legend: { 
+                            display: type === 'doughnut',
+                            labels: { color: '#e2e8f0' }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleColor: '#22d3ee',
+                            padding: 12,
+                            cornerRadius: 8,
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: type !== 'doughnut' ? {
+                        x: { grid: { display: false, drawBorder: false } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false }, beginAtZero: true }
+                    } : {}
+                }
+            });
+        }
+    </script>
+</body>
+</html>
